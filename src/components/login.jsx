@@ -10,6 +10,7 @@ import {
 import { app } from "../firebaseConfig/config";
 import "../app.css";
 import { Link, useNavigate } from "react-router-dom"; // Assuming you're using react-router
+import axios from "axios";
 
 const Login = () => {
   const auth = getAuth(app);
@@ -53,11 +54,31 @@ const Login = () => {
     };
   }, []);
 
+  const DBWork = async (response) => {
+    try {
+      const serverResponse = await axios.get("http://localhost:3000/signIn", {
+        params: { uid: response.user.uid },
+        headers: { "Content-Type": "application/json" },
+      });
+
+      console.log(serverResponse.data);
+      if (serverResponse.data.message === "Success") {
+        navigate("/chat");
+      } else {
+        navigate("/");
+      }
+    } catch (err) {
+      console.log(err.message);
+    }
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const response = await signInWithEmailAndPassword(auth, email, password);
+      console.log(response);
+      await DBWork(response);
       setError("");
       navigate("/chat");
       setLoading(false);
@@ -72,7 +93,8 @@ const Login = () => {
   const handleGoogleSignIn = async () => {
     setLoading(true);
     try {
-      await signInWithPopup(auth, googleProvider);
+      const response = await signInWithPopup(auth, googleProvider);
+      await DBWork(response);
       setError("");
       // Navigate to chat page
     } catch (err) {
@@ -84,7 +106,8 @@ const Login = () => {
   const handleGithubSignIn = async () => {
     setLoading(true);
     try {
-      await signInWithPopup(auth, githubProvider);
+      const resposne = await signInWithPopup(auth, githubProvider);
+      await DBWork(resposne);
       setError("");
       // Navigate to chat page
     } catch (err) {

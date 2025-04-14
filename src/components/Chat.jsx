@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Send,
   Search,
@@ -10,11 +10,16 @@ import {
   X,
   ArrowLeft,
 } from "lucide-react";
+import { useNavigate } from "react-router";
+import { onAuthStateChanged, getAuth } from "firebase/auth";
+import { app } from "../firebaseConfig/config";
 
 const Chat = () => {
   const [message, setMessage] = useState("");
   const [activeChat, setActiveChat] = useState(1);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const auth = getAuth(app);
+  const navigate = useNavigate();
 
   // Sample user data
   const users = [
@@ -104,6 +109,15 @@ const Chat = () => {
       time: "12:25 PM",
     },
   ];
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        navigate("/");
+      }
+    });
+    return () => unsub();
+  }, []);
 
   const activeUser = users.find((user) => user.id === activeChat);
 

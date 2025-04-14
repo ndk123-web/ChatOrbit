@@ -3,11 +3,13 @@ import {
   GoogleAuthProvider,
   createUserWithEmailAndPassword,
   signInWithPopup,
+  updateProfile,
 } from "firebase/auth";
 import { app } from "../firebaseConfig/config";
 import { getAuth } from "firebase/auth";
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const Signup = () => {
   const [email, setEmail] = useState("");
@@ -25,23 +27,55 @@ const Signup = () => {
     setAppear(true);
   }, []);
 
+  const DBWork = async (response) => {
+    try {
+      // console.log(response);
+      const serverResponse = await axios.post(
+        "http://localhost:3000/signUp",
+        {
+          uid: response.user.uid,
+          email: response.user.email,
+          userName: response.user.displayName || response.user.email,
+          photoUrl: response.user.photoURL,
+        }, // body
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      console.log("Server Response: ", serverResponse.data);
+
+      if (serverResponse.data.message === "Success") {
+        navigate("/chat"); // Navigate to chat page after signup
+      } else {
+        navigate("/");
+      }
+      // navigate("/chat");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSignup = async (e) => {
     e.preventDefault();
     if (password !== confirmPassword) {
       setError("Passwords do not match.");
       return;
     }
-
-    setLoading(true);
-    setError("");
-
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      navigate("/chat"); // Navigate to chat page after signup
+      const response = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      await DBWork(response);
+      setLoading(true);
+      setError("");
     } catch (err) {
       setError(err.message);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -51,7 +85,8 @@ const Signup = () => {
     const provider = new GoogleAuthProvider();
 
     try {
-      await signInWithPopup(auth, provider);
+      const response = await signInWithPopup(auth, provider);
+      await DBWork(response);
       navigate("/chat");
     } catch (err) {
       setError(err.message);
@@ -66,7 +101,8 @@ const Signup = () => {
     const provider = new GithubAuthProvider();
 
     try {
-      await signInWithPopup(auth, provider);
+      const response = await signInWithPopup(auth, provider);
+      await DBWork(response);
       navigate("/chat");
     } catch (err) {
       setError(err.message);
