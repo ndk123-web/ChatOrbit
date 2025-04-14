@@ -6,6 +6,7 @@ import Signup from "./components/Signup.jsx";
 import Login from "./components/login.jsx";
 import Chat from "./components/Chat.jsx";
 import { createBrowserRouter, RouterProvider } from "react-router";
+import SessionProvider from "./sessionProvider/myContext.jsx";
 
 const router = createBrowserRouter([
   {
@@ -17,19 +18,19 @@ const router = createBrowserRouter([
     element: <Login />,
   },
   {
-    path : '/signup',
-    element : <Signup />
+    path: "/signup",
+    element: <Signup />,
   },
   {
-    path : '/chat',
-    element : <Chat />
-  }
+    path: "/chat",
+    element: <Chat />,
+  },
 ]);
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <RouterProvider router={router}>
-      
-    </RouterProvider>
+    <SessionProvider>
+      <RouterProvider router={router} />
+    </SessionProvider>
   </StrictMode>
 );
