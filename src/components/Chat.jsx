@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import {
   Send,
   Search,
@@ -9,10 +9,12 @@ import {
   Menu,
   X,
   ArrowLeft,
+  LogOut,
 } from "lucide-react";
 import { useNavigate } from "react-router";
-import { onAuthStateChanged, getAuth } from "firebase/auth";
+import { onAuthStateChanged, getAuth, signOut } from "firebase/auth";
 import { app } from "../firebaseConfig/config";
+import { myContext } from "../sessionProvider/myContext";
 
 const Chat = () => {
   const [message, setMessage] = useState("");
@@ -20,6 +22,7 @@ const Chat = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const auth = getAuth(app);
   const navigate = useNavigate();
+  const { userDetails, setUserDetails } = useContext(myContext);
 
   // Sample user data
   const users = [
@@ -114,7 +117,12 @@ const Chat = () => {
     const unsub = onAuthStateChanged(auth, (user) => {
       if (!user) {
         navigate("/");
+        return;
       }
+      setUserDetails({
+        userName: user.displayName || user.email,
+        photoUrl: user.photoURL,
+      });
     });
     return () => unsub();
   }, []);
@@ -132,6 +140,15 @@ const Chat = () => {
     setSidebarOpen(!sidebarOpen);
   };
 
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      navigate("/");
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  };
+
   return (
     <div className="flex h-screen bg-gradient-to-br from-indigo-900 to-purple-900 text-white overflow-hidden">
       {/* Sidebar - Mobile: absolute positioned overlay, Desktop: fixed width */}
@@ -145,15 +162,22 @@ const Chat = () => {
           <div className="flex items-center">
             <div className="relative">
               <img
-                src="/api/placeholder/40/40"
+                src={userDetails.photoUrl}
                 alt="Your avatar"
                 className="w-10 h-10 rounded-full object-cover"
               />
               <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-indigo-900"></div>
             </div>
-            <span className="ml-3 font-medium">You</span>
+            <span className="ml-3 font-medium">{userDetails.userName}</span>
           </div>
           <div className="flex gap-2">
+            <button
+              className="p-2 rounded-full hover:bg-indigo-700 transition-colors text-indigo-300 hover:text-white"
+              onClick={handleLogout}
+              title="Logout"
+            >
+              <LogOut size={18} />
+            </button>
             <button className="p-2 rounded-full hover:bg-indigo-700 transition-colors">
               <Users size={18} />
             </button>
@@ -262,6 +286,13 @@ const Chat = () => {
             </div>
           </div>
           <div className="flex gap-2 md:gap-4">
+            <button
+              onClick={handleLogout}
+              className="p-2 rounded-full hover:bg-indigo-700 transition-colors text-indigo-300 hover:text-white sm:hidden"
+              title="Logout"
+            >
+              <LogOut size={18} />
+            </button>
             <button className="p-2 rounded-full hover:bg-indigo-700 transition-colors hidden sm:block">
               <Phone size={18} />
             </button>

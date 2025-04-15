@@ -60,7 +60,7 @@ const NavBar = () => {
         aria-label="Toggle menu"
         aria-expanded={menuOpen}
       >
-        <div className="relative w-6 h-6">
+        <div className="relative w-4 h-8">
           <span
             className={`absolute h-0.5 w-6 bg-white transform transition-all duration-300 ease-in-out ${
               menuOpen ? "rotate-45 translate-y-2.5" : ""

@@ -68,6 +68,11 @@ const sessionProvider = ({ children }) => {
       ),
     },
   ]);
+  const [userDetails , setUserDetails] = useState({
+    userName : "",
+    photoUrl : "",
+    socketId : ""
+  })
 
   return (
     <>
@@ -79,6 +84,8 @@ const sessionProvider = ({ children }) => {
           setAppear,
           features,
           setFeatures,
+          userDetails,
+          setUserDetails
         }}
       >
         {children}
