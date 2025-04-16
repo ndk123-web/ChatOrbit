@@ -145,6 +145,15 @@ app.get("/signIn", async (req, res) => {
   }
 });
 
+app.get("/getAllUsers", async (req, res) => {
+  try {
+    const allUsers = await Users.find({});
+    return res.json(allUsers);
+  } catch (err) {
+    console.log("Error in User Fetching: ", err.message);
+  }
+});
+
 // Listen for connections on port 3000
 httpServer.listen(3000, () => {
   console.log("SERVER LISTENING ON PORT 3000");

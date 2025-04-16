@@ -15,14 +15,16 @@ import { useNavigate } from "react-router";
 import { onAuthStateChanged, getAuth, signOut } from "firebase/auth";
 import { app } from "../firebaseConfig/config";
 import { myContext } from "../sessionProvider/myContext";
+import axios from "axios";
 
 const Chat = () => {
   const [message, setMessage] = useState("");
-  const [activeChat, setActiveChat] = useState(1);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const auth = getAuth(app);
+  const [activeChat, setActiveChat] = useState("67ffda38e4e5f6b7c5923aaa");
   const navigate = useNavigate();
   const { userDetails, setUserDetails } = useContext(myContext);
+  const [ AllUsers, setAllUsers ] = useState([]);
 
   // Sample user data
   const users = [
@@ -121,13 +123,28 @@ const Chat = () => {
       }
       setUserDetails({
         userName: user.displayName || user.email,
-        photoUrl: user.photoURL,
+        photoUrl: user.photoURL || "user.png",
       });
     });
     return () => unsub();
   }, []);
 
-  const activeUser = users.find((user) => user.id === activeChat);
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await axios.get("http://localhost:3000/getAllUsers", {
+          headers: { "Content-Type": "application/json" },
+        });
+        console.log(response); // debug
+        setAllUsers(response.data);
+      } catch (err) {
+        alert(err.message);
+      }
+    };
+    fetchUsers();
+  }, []);
+
+  const activeUser = AllUsers.find((user) => user._id === activeChat);
 
   const handleSendMessage = (e) => {
     e.preventDefault();
@@ -207,14 +224,14 @@ const Chat = () => {
 
         {/* Chats list */}
         <div className="flex-1 overflow-y-auto">
-          {users.map((user) => (
+          {AllUsers.map((user) => (
             <div
-              key={user.id}
+              key={user._id}
               className={`flex items-center p-4 cursor-pointer transition-colors hover:bg-indigo-800 hover:bg-opacity-30 ${
-                activeChat === user.id ? "bg-indigo-800 bg-opacity-40" : ""
+                activeChat === user._id ? "bg-indigo-800 bg-opacity-40" : ""
               }`}
               onClick={() => {
-                setActiveChat(user.id);
+                setActiveChat(user._id);
                 if (window.innerWidth < 768) {
                   setSidebarOpen(false);
                 }
@@ -222,8 +239,8 @@ const Chat = () => {
             >
               <div className="relative">
                 <img
-                  src={user.avatar}
-                  alt={user.name}
+                  src={user.photoUrl || "user.png"}
+                  alt={user.userName}
                   className="w-12 h-12 rounded-full object-cover"
                 />
                 <div
@@ -234,12 +251,12 @@ const Chat = () => {
               </div>
               <div className="ml-3 flex-1">
                 <div className="flex justify-between items-center">
-                  <h3 className="font-medium">{user.name}</h3>
-                  <span className="text-xs text-indigo-300">{user.time}</span>
+                  <h3 className="font-medium">{user.userName}</h3>
+                  <span className="text-xs text-indigo-300">12.45 PM</span>
                 </div>
                 <div className="flex justify-between items-center mt-1">
                   <p className="text-sm text-indigo-300 truncate w-36 md:w-28 lg:w-36">
-                    {user.lastMessage}
+                    {user.lastMessage || 'No Recent Messages '}
                   </p>
                   {user.unread > 0 && (
                     <span className="bg-purple-500 text-white rounded-full text-xs px-2 py-0.5">
@@ -266,8 +283,8 @@ const Chat = () => {
             </button>
             <div className="relative">
               <img
-                src={activeUser?.avatar}
-                alt={activeUser?.name}
+                src={activeUser?.photoUrl || "user.png"}
+                alt={activeUser?.userName}
                 className="w-10 h-10 rounded-full object-cover"
               />
               <div
@@ -279,7 +296,7 @@ const Chat = () => {
               ></div>
             </div>
             <div className="ml-3">
-              <h3 className="font-medium">{activeUser?.name}</h3>
+              <h3 className="font-medium">{activeUser?.userName}</h3>
               <p className="text-xs text-indigo-300">
                 {activeUser?.status === "online" ? "Online" : "Offline"}
               </p>
@@ -324,7 +341,7 @@ const Chat = () => {
                 >
                   <p className="break-words">{chat.text}</p>
                   <p className="text-right text-xs mt-1 text-indigo-300">
-                    {chat.time}
+                    6.00 PM
                   </p>
                 </div>
               </div>
