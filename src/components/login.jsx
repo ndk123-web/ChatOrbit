@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import {
   getAuth,
   signInWithEmailAndPassword,
@@ -6,11 +6,13 @@ import {
   GoogleAuthProvider,
   GithubAuthProvider,
   onAuthStateChanged,
+  signOut,
 } from "firebase/auth";
 import { app } from "../firebaseConfig/config";
 import "../app.css";
 import { Link, useNavigate } from "react-router-dom"; // Assuming you're using react-router
 import axios from "axios";
+import { myContext } from "../sessionProvider/myContext";
 
 const Login = () => {
   const auth = getAuth(app);
@@ -23,6 +25,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [appear, setAppear] = useState(false);
   const navigate = useNavigate();
+  const { isLoggedIn, setIsLoggedIn } = useContext(myContext);
 
   // On mount, set state variable to trigger animation
   useEffect(() => {
@@ -35,14 +38,16 @@ const Login = () => {
 
     // Set up a listener on the auth state
     // This listener will be called whenever the user logs in or out
-    const unsub = onAuthStateChanged(auth, (user) => {
-      if (user) {
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      if (user && isLoggedIn) {
         // If the user is logged in, navigate to the chat page
         console.log("User is logged in, navigating to chat page");
+        console.log("From IndexDB User: ", user);
         navigate("/chat");
       } else {
         // If the user is logged out, don't do anything
         console.log("User is logged out");
+        navigate("/login");
       }
     });
 
@@ -62,10 +67,14 @@ const Login = () => {
       });
 
       console.log(serverResponse.data);
-      if (serverResponse.data.message === "Success") {
+      if (serverResponse?.data?.message === "Success") {
         navigate("/chat");
-      } else {
-        navigate("/");
+        setIsLoggedIn(true);
+        return;
+      } else if (serverResponse?.data?.message === "Not Exist") {
+        navigate("/signUp");
+        setIsLoggedIn(false);
+        return;
       }
     } catch (err) {
       console.log(err.message);

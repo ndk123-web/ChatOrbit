@@ -16,6 +16,7 @@ import { onAuthStateChanged, getAuth, signOut } from "firebase/auth";
 import { app } from "../firebaseConfig/config";
 import { myContext } from "../sessionProvider/myContext";
 import axios from "axios";
+import io from "socket.io-client";
 
 const Chat = () => {
   const [message, setMessage] = useState("");
@@ -24,7 +25,8 @@ const Chat = () => {
   const [activeChat, setActiveChat] = useState("67ffda38e4e5f6b7c5923aaa");
   const navigate = useNavigate();
   const { userDetails, setUserDetails } = useContext(myContext);
-  const [ AllUsers, setAllUsers ] = useState([]);
+  const [AllUsers, setAllUsers] = useState([]);
+  const SOCKET_URL = "http://localhost:3000";
 
   // Sample user data
   const users = [
@@ -116,17 +118,60 @@ const Chat = () => {
   ];
 
   useEffect(() => {
+    let socket; // declare socket reference
+
     const unsub = onAuthStateChanged(auth, (user) => {
       if (!user) {
         navigate("/");
         return;
       }
+      console.log("Current User: ", user);
       setUserDetails({
         userName: user.displayName || user.email,
         photoUrl: user.photoURL || "user.png",
       });
+
+      // it generates a new socket instance 
+      socket = io(SOCKET_URL);
+
+      // when socket handshake is done with server then this callback will be executed 
+      socket.on("connect", async () => {
+        console.log("Socket Connected: ", socket.id);
+        try {
+          const serverResponse = await axios.put(
+            "http://localhost:3000/setSocketId",
+            { socketId: socket.id, uid: user.uid },
+            { headers: { "Content-Type": "application/json" } }
+          );
+          console.log("Server Response:", serverResponse.data);
+        } catch (error) {
+          console.error("Error Updating Socket ID:", error);
+        }
+      });
+
+      // when user disconnect then this callback will be executed 
+      socket.on("disconnect", async () => {
+        if (!user?.uid) return; // safety check
+        try {
+          const serverResponse = await axios.put(
+            "http://localhost:3000/removeSocketId",
+            { uid: user.uid },
+            { headers: { "Content-Type": "application/json" } }
+          );
+          console.log("Server Response:", serverResponse.data);
+        } catch (err) {
+          console.log(err.message);
+        }
+      });
     });
-    return () => unsub();
+
+    return () => {
+      unsub();
+      if (socket) {
+        socket.disconnect(); // <-- Important: Close socket when component unmounts
+        console.log("Socket manually disconnected");
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -256,7 +301,7 @@ const Chat = () => {
                 </div>
                 <div className="flex justify-between items-center mt-1">
                   <p className="text-sm text-indigo-300 truncate w-36 md:w-28 lg:w-36">
-                    {user.lastMessage || 'No Recent Messages '}
+                    {user.lastMessage || "No Recent Messages "}
                   </p>
                   {user.unread > 0 && (
                     <span className="bg-purple-500 text-white rounded-full text-xs px-2 py-0.5">
@@ -283,7 +328,11 @@ const Chat = () => {
             </button>
             <div className="relative">
               <img
-                src={activeUser?.photoUrl || "user.png"}
+                src={
+                  console.log("ActiveUser: ", activeUser) ||
+                  activeUser?.photoUrl ||
+                  "user.png"
+                }
                 alt={activeUser?.userName}
                 className="w-10 h-10 rounded-full object-cover"
               />

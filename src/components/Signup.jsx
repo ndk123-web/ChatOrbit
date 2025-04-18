@@ -46,8 +46,10 @@ const Signup = () => {
       );
       console.log("Server Response: ", serverResponse.data);
 
-      if (serverResponse.data.message === "Success") {
+      if (serverResponse?.data?.message === "Success") {
         navigate("/chat"); // Navigate to chat page after signup
+      } else if (serverResponse?.data?.message === "User Exist") {
+        navigate("/login");
       } else {
         navigate("/");
       }

@@ -6,6 +6,7 @@ const { Server } = require("socket.io");
 const cors = require("cors");
 const { nanoid } = require("nanoid");
 const { default: axios } = require("axios");
+const { User } = require("lucide-react");
 
 const app = express();
 const httpServer = http.createServer(app);
@@ -83,7 +84,14 @@ const offlineMessages = mongoose.model(
 socket.on("connection", (clientSocket) => {
   console.log("Client Socket Connected where ID: ", clientSocket.id);
 
+  // This is for when Browser tab or Browser windoe closed by user
+  clientSocket.on("disconnect", async () => {
+    console.log("User disconnected:", clientSocket.id);
+    // database me socketId ko null kar
+    await Users.updateOne({ socketId: clientSocket.id }, { $set: { socketId: "" } });
+    console.log(`SocketID ${clientSocket.id} is deleted in DB.`);
   });
+});
 
 // User signup
 app.post("/signUp", async (req, res) => {
@@ -108,6 +116,40 @@ app.post("/signUp", async (req, res) => {
 
 // Test endpoint
 app.get("/", (req, res) => res.send("Hello This is Backend"));
+
+app.put("/setSocketId", async (req, res) => {
+  try {
+    const { socketId, uid } = req.body;
+    const userExist = await Users.findOne({ uid });
+    if (userExist) {
+      userExist.socketId = String(socketId);
+      await userExist.save();
+      console.log(`User uid ${uid} is Updated In DB`);
+      return res.json({ message: "Success" });
+    } else {
+      return res.json({ message: "User Not Found" });
+    }
+  } catch (err) {
+    return res.json({ message: "error", error: err.message });
+  }
+});
+
+app.put("/removeSocketId", async (req, res) => {
+  try {
+    const { uid } = req.body;
+    const userExist = await Users.findOne({ uid });
+    if (userExist) {
+      userExist.socketId = "";
+      await userExist.save();
+      console.log(`User uid ${uid} is Deleted In DB`);
+      return res.json({ message: "Success" });
+    } else {
+      return res.json({ message: "User Not Found" });
+    }
+  } catch (err) {
+    return res.json({ message: "error", error: err.message });
+  }
+});
 
 // User sign-in
 app.get("/signIn", async (req, res) => {
