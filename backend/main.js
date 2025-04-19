@@ -7,6 +7,7 @@ const cors = require("cors");
 const { nanoid } = require("nanoid");
 const { default: axios } = require("axios");
 const { User } = require("lucide-react");
+const { send } = require("vite");
 
 const app = express();
 const httpServer = http.createServer(app);
@@ -84,11 +85,51 @@ const offlineMessages = mongoose.model(
 socket.on("connection", (clientSocket) => {
   console.log("Client Socket Connected where ID: ", clientSocket.id);
 
+  // setting socket id using socket instead of polling
+  clientSocket.on("setSocketId", async ({ uid, socketId }) => {
+    try {
+      const userExist = await Users.findOne({ uid });
+      if (userExist) {
+        userExist.socketId = String(socketId);
+        await userExist.save();
+        console.log(`User uid ${uid} is Updated In DB`);
+        // console.log(`User ${uid} updated socket Id ${socketId}`);
+      } else {
+        console.log("user not found");
+      }
+    } catch (err) {
+      console.log(err.message);
+    }
+  });
+
+  // Sending Message From Sender to Receiver
+  clientSocket.on("sendMessage", async ({ sender, receiver, message }) => {
+    // console.log(`Sender ${sender} Receiver ${receiver} message ${message}`);
+
+    try {
+      const receiverExist = await Users.findOne({ uid: receiver });
+      if (receiverExist && receiverExist.socketId !== "") {
+        console.log(`Receiver ${receiver} exists and Online`);
+        socket
+          .to(receiverExist.socketId)
+          .emit("receiverMessage", { message: message });
+        return;
+      } else {
+        console.log("Receiver Not Exists");
+      }
+    } catch (err) {
+      console.log("Error: ", err.message);
+    }
+  });
+
   // This is for when Browser tab or Browser windoe closed by user
   clientSocket.on("disconnect", async () => {
     console.log("User disconnected:", clientSocket.id);
     // database me socketId ko null kar
-    await Users.updateOne({ socketId: clientSocket.id }, { $set: { socketId: "" } });
+    await Users.updateOne(
+      { socketId: clientSocket.id },
+      { $set: { socketId: "" } }
+    );
     console.log(`SocketID ${clientSocket.id} is deleted in DB.`);
   });
 });
@@ -117,39 +158,50 @@ app.post("/signUp", async (req, res) => {
 // Test endpoint
 app.get("/", (req, res) => res.send("Hello This is Backend"));
 
-app.put("/setSocketId", async (req, res) => {
-  try {
-    const { socketId, uid } = req.body;
-    const userExist = await Users.findOne({ uid });
-    if (userExist) {
-      userExist.socketId = String(socketId);
-      await userExist.save();
-      console.log(`User uid ${uid} is Updated In DB`);
-      return res.json({ message: "Success" });
-    } else {
-      return res.json({ message: "User Not Found" });
-    }
-  } catch (err) {
-    return res.json({ message: "error", error: err.message });
-  }
-});
+// app.put("/setSocketId", async (req, res) => {
+//   try {
+//     const { socketId, uid } = req.body;
+//     const userExist = await Users.findOne({ uid });
+//     if (userExist) {
+//       userExist.socketId = String(socketId);
+//       await userExist.save();
+//       console.log(`User uid ${uid} is Updated In DB`);
+//       return res.json({ message: "Success" });
+//     } else {
+//       return res.json({ message: "User Not Found" });
+//     }
+//   } catch (err) {
+//     return res.json({ message: "error", error: err.message });
+//   }
+// });
 
-app.put("/removeSocketId", async (req, res) => {
-  try {
-    const { uid } = req.body;
-    const userExist = await Users.findOne({ uid });
-    if (userExist) {
-      userExist.socketId = "";
-      await userExist.save();
-      console.log(`User uid ${uid} is Deleted In DB`);
-      return res.json({ message: "Success" });
-    } else {
-      return res.json({ message: "User Not Found" });
-    }
-  } catch (err) {
-    return res.json({ message: "error", error: err.message });
-  }
-});
+// app.put("/removeSocketId", async (req, res) => {
+//   try {
+//     const { uid } = req.body;
+//     const userExist = await Users.findOne({ uid });
+//     if (userExist) {
+//       userExist.socketId = "";
+//       await userExist.save();
+//       console.log(`User uid ${uid} is Deleted In DB`);
+//       return res.json({ message: "Success" });
+//     } else {
+//       return res.json({ message: "User Not Found" });
+//     }
+//   } catch (err) {
+//     return res.json({ message: "error", error: err.message });
+//   }
+// });
+
+// app.post("/sendMessage", async (req, res) => {
+//   const { sender, receiver, message } = req.body;
+
+//   try {
+//     console.log(`Sender ${sender} , Receiver ${receiver} , message ${message}`);
+//     return res.json({ message: "Success" });
+//   } catch (err) {
+//     return res.json({ message: "error", error: err.message });
+//   }
+// });
 
 // User sign-in
 app.get("/signIn", async (req, res) => {

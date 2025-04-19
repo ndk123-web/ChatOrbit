@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from "react";
+import React, { useEffect, useState, useContext, useRef } from "react";
 import {
   Send,
   Search,
@@ -27,6 +27,7 @@ const Chat = () => {
   const { userDetails, setUserDetails } = useContext(myContext);
   const [AllUsers, setAllUsers] = useState([]);
   const SOCKET_URL = "http://localhost:3000";
+  const socketRef = useRef(null); // declare socket reference
 
   // Sample user data
   const users = [
@@ -118,59 +119,51 @@ const Chat = () => {
   ];
 
   useEffect(() => {
-    let socket; // declare socket reference
-
     const unsub = onAuthStateChanged(auth, (user) => {
       if (!user) {
         navigate("/");
         return;
       }
-      console.log("Current User: ", user);
+      // console.log("Current User: ", user);
       setUserDetails({
         userName: user.displayName || user.email,
         photoUrl: user.photoURL || "user.png",
       });
 
-      // it generates a new socket instance 
-      socket = io(SOCKET_URL);
+      // it generates a new socket instance
+      socketRef.current = io(SOCKET_URL);
 
-      // when socket handshake is done with server then this callback will be executed 
-      socket.on("connect", async () => {
-        console.log("Socket Connected: ", socket.id);
+      // when socket handshake is done with server then this callback will be executed
+      socketRef.current.on("connect", async () => {
+        console.log("Socket Connected: ", socketRef.current.id);
+        
         try {
-          const serverResponse = await axios.put(
-            "http://localhost:3000/setSocketId",
-            { socketId: socket.id, uid: user.uid },
-            { headers: { "Content-Type": "application/json" } }
-          );
-          console.log("Server Response:", serverResponse.data);
+          socketRef.current.emit("setSocketId", {
+            uid: user.uid,
+            socketId: socketRef.current.id,
+          });
+
+          // const serverResponse = await axios.put(
+          //   "http://localhost:3000/setSocketId",
+          //   { socketId: socketRef.current.id, uid: user.uid },
+          //   { headers: { "Content-Type": "application/json" } }
+          // );
+          // console.log("Server Response:", serverResponse.data);
         } catch (error) {
           console.error("Error Updating Socket ID:", error);
         }
       });
 
-      // when user disconnect then this callback will be executed 
-      socket.on("disconnect", async () => {
-        if (!user?.uid) return; // safety check
-        try {
-          const serverResponse = await axios.put(
-            "http://localhost:3000/removeSocketId",
-            { uid: user.uid },
-            { headers: { "Content-Type": "application/json" } }
-          );
-          console.log("Server Response:", serverResponse.data);
-        } catch (err) {
-          console.log(err.message);
-        }
+      // this is important for receiveing messages from sender
+      socketRef.current.on("receiverMessage", (message) => {
+        console.log("Message: ", message);
       });
+
+      // when user disconnect then this callback will be executed
     });
 
     return () => {
       unsub();
-      if (socket) {
-        socket.disconnect(); // <-- Important: Close socket when component unmounts
-        console.log("Socket manually disconnected");
-      }
     };
   }, []);
 
@@ -180,7 +173,7 @@ const Chat = () => {
         const response = await axios.get("http://localhost:3000/getAllUsers", {
           headers: { "Content-Type": "application/json" },
         });
-        console.log(response); // debug
+        // console.log(response); // debug
         setAllUsers(response.data);
       } catch (err) {
         alert(err.message);
@@ -191,9 +184,20 @@ const Chat = () => {
 
   const activeUser = AllUsers.find((user) => user._id === activeChat);
 
-  const handleSendMessage = (e) => {
+  const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (message.trim() === "") return;
+    if (message.trim() === "") {
+      return;
+    }
+    // setMessage(e.target.value);
+
+    // Actual Logic For Sending Message to Receiver activeUser is receiver
+    socketRef.current.emit("sendMessage", {
+      sender: auth.currentUser.uid,
+      receiver: activeUser.uid,
+      message: message,
+    });
+
     // Logic to send message would go here
     setMessage("");
   };
