@@ -82,50 +82,100 @@ const offlineMessages = mongoose.model(
 );
 
 // Socket Logic
+// Socket Connection Logic
+// When a new client socket is connected, log the event
 socket.on("connection", (clientSocket) => {
-  console.log("Client Socket Connected where ID: ", clientSocket.id);
+  console.log(
+    "Client Socket Connected where ID: ",
+    clientSocket.id,
+    " and socket object is: ",
+    clientSocket
+  );
 
-  // setting socket id using socket instead of polling
+  // When the client requests to set the socketId in the database
   clientSocket.on("setSocketId", async ({ uid, socketId }) => {
     try {
+      // Find the user in the database
       const userExist = await Users.findOne({ uid });
+
+      // If the user exists, update the socketId in the database
       if (userExist) {
         userExist.socketId = String(socketId);
         await userExist.save();
-        console.log(`User uid ${uid} is Updated In DB`);
-        // console.log(`User ${uid} updated socket Id ${socketId}`);
+        console.log(
+          `User with uid ${uid} is Updated In DB with socketId ${socketId}`
+        );
       } else {
-        console.log("user not found");
+        console.log(`User with uid ${uid} not found in DB`);
       }
     } catch (err) {
-      console.log(err.message);
+      console.log(`Error while setting socketId: ${err.message}`);
     }
   });
 
-  // Sending Message From Sender to Receiver
+  // When the client sends a message to the server
   clientSocket.on("sendMessage", async ({ sender, receiver, message }) => {
-    // console.log(`Sender ${sender} Receiver ${receiver} message ${message}`);
+    // console.log(
+    //   `Sender ${sender} Receiver ${receiver} message ${message}`
+    // );
 
     try {
+      // Find the receiver in the database
       const receiverExist = await Users.findOne({ uid: receiver });
-      if (receiverExist && receiverExist.socketId !== "") {
+      // Find the sender in the database
+      const senderExist = await Users.findOne({ uid: sender });
+
+      // If the receiver does not exist in the database, log an error
+      if (!receiverExist) {
+        console.log(`Receiver with uid ${receiver} not found in DB`);
+        return;
+      }
+
+      console.log(
+        `Sender ${senderExist} Receiver ${receiverExist} message ${message}`
+      );
+
+      // If the receiver is online, emit a message to the receiver's socket
+      if (receiverExist.socketId !== "") {
         console.log(`Receiver ${receiver} exists and Online`);
+
+        // Emit a message to the receiver's socket
         socket
           .to(receiverExist.socketId)
           .emit("receiverMessage", { message: message });
-        return;
+
+        // Save the message in the database
+        const newMessage = new Messages({
+          sender: senderExist._id,
+          receiver: receiverExist._id,
+          content: message,
+        });
+        await newMessage.save();
+        console.log(
+          `Message saved in DB for Receiver ${receiver} with message ${message}`
+        );
       } else {
-        console.log("Receiver Not Exists");
+        console.log(`Receiver ${receiver} exists but Offline`);
+
+        // Save the message as an offline message in the database
+        const newOfflineMessage = new offlineMessages({
+          sender: senderExist._id,
+          receiver: receiverExist._id,
+          content: message,
+        });
+        await newOfflineMessage.save();
+        console.log(`Offline message saved for ${receiver}`);
       }
     } catch (err) {
-      console.log("Error: ", err.message);
+      console.log(`Error while sending message: ${err.message}`);
     }
   });
 
-  // This is for when Browser tab or Browser windoe closed by user
+  // When the client disconnects, log the event
   clientSocket.on("disconnect", async () => {
     console.log("User disconnected:", clientSocket.id);
-    // database me socketId ko null kar
+
+    // Delete the socketId from the database for the disconnected user
     await Users.updateOne(
       { socketId: clientSocket.id },
       { $set: { socketId: "" } }

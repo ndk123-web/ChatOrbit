@@ -209,6 +209,8 @@ const Chat = () => {
   const handleLogout = async () => {
     try {
       await signOut(auth);
+      socketRef.current.disconnect(); // Disconnect the socket when logging out 
+      console.log("Socket Disconnected: ", socketRef.current.id);
       navigate("/");
     } catch (error) {
       console.error("Error signing out:", error);
