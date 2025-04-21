@@ -337,7 +337,7 @@ const Chat = () => {
                 />
                 <div
                   className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-indigo-900 ${
-                    user.status === "online" ? "bg-green-500" : "bg-gray-400"
+                    user?.socketId !== "" ? "bg-green-500" : "bg-gray-400"
                   }`}
                 ></div>
               </div>
@@ -385,7 +385,7 @@ const Chat = () => {
               />
               <div
                 className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-indigo-900 ${
-                  activeUser?.status === "online"
+                  activeUser?.socketId !== ""
                     ? "bg-green-500"
                     : "bg-gray-400"
                 }`}
@@ -394,7 +394,7 @@ const Chat = () => {
             <div className="ml-3">
               <h3 className="font-medium">{activeUser?.userName}</h3>
               <p className="text-xs text-indigo-300">
-                {activeUser?.status === "online" ? "Online" : "Offline"}
+                {activeUser?.socketId !== "" ? "Online" : "Offline"}
               </p>
             </div>
           </div>
@@ -425,7 +425,11 @@ const Chat = () => {
               <div
                 key={chat._id}
                 className={`flex ${
-                  ( chat.sender.uid !== auth.currentUser.uid ) ? "justify-start" : "justify-end"
+
+                  // logic to check sender and receiver 
+                  // if sender is activaChat means sender is activeUser in left side 
+                  // if sender is not activeChat means he is the current User 
+                  (  chat.sender === activeChat ) ? "justify-start" : "justify-end"
                 }`}
               >
                 <div

@@ -176,12 +176,18 @@ socket.on("connection", (clientSocket) => {
     const senderExist = await Users.findOne({ uid: sender });
     const receiverExist = await Users.findOne({ uid: receiver });
     if (senderExist && receiverExist) {
+      // const messages = await Messages.find({
+      //   sender: senderExist._id,
+      //   receiver: receiverExist._id,
+      // })
+      //   .populate("sender")
+      //   .populate("receiver");
       const messages = await Messages.find({
-        sender: senderExist._id,
-        receiver: receiverExist._id,
-      })
-        .populate("sender")
-        .populate("receiver");
+        $or: [
+          { sender: senderExist._id, receiver: receiverExist._id },
+          { sender: receiverExist._id, receiver: senderExist._id },
+        ],
+      });
       console.log(`Message between ${sender} and ${receiver} is: `, messages);
       // Send to both users individually
       [senderExist.socketId, receiverExist.socketId].forEach((id) => {
