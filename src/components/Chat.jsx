@@ -26,6 +26,7 @@ const Chat = () => {
   const navigate = useNavigate();
   const { userDetails, setUserDetails } = useContext(myContext);
   const [AllUsers, setAllUsers] = useState([]);
+  const [userSessionMessages, setUserSessionMessages] = useState([]);
   const SOCKET_URL = "http://localhost:3000";
   const socketRef = useRef(null); // declare socket reference
 
@@ -118,6 +119,15 @@ const Chat = () => {
     },
   ];
 
+  // to check messages are came or not
+  useEffect(() => {
+    if (userSessionMessages.length > 0) {
+      console.log("Actual Messages: ", userSessionMessages);
+    } else {
+      console.log("Till Now No Messages Found for Current Session");
+    }
+  }, [userSessionMessages]);
+
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
       if (!user) {
@@ -136,7 +146,7 @@ const Chat = () => {
       // when socket handshake is done with server then this callback will be executed
       socketRef.current.on("connect", async () => {
         console.log("Socket Connected: ", socketRef.current.id);
-        
+
         try {
           socketRef.current.emit("setSocketId", {
             uid: user.uid,
@@ -163,10 +173,15 @@ const Chat = () => {
     });
 
     return () => {
+      // Cleanup function to unsubscribe from the auth state listener
+      if (socketRef.current) {
+        socketRef.current.off("receiverMessage"); // Remove the message listener
+      }
       unsub();
     };
   }, []);
 
+  // Fetch all users from the server which is Left Side Where all users are listed
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -183,6 +198,32 @@ const Chat = () => {
   }, []);
 
   const activeUser = AllUsers.find((user) => user._id === activeChat);
+
+  // to fetch message of current user and activeUser ( sender and receiver )
+  useEffect(() => {
+    if (!socketRef.current) return;
+
+    socketRef.current.emit("setCurrentSession", {
+      sender: auth.currentUser.uid,
+      receiver: activeUser.uid,
+    });
+
+    const handleMessages = ({ messages }) => {
+      if (messages) {
+        console.log("Current Session Messages: ", messages);
+        setUserSessionMessages(messages);
+      } else {
+        console.log("No Messages Found for Current Session");
+      }
+    };
+
+    socketRef.current.on("currentSessionMessages", handleMessages);
+
+    // Cleanup function to remove the event listener when the component unmounts or when activeUser changes
+    return () => {
+      socketRef.current.off("currentSessionMessages", handleMessages);
+    };
+  }, [activeUser]);
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -209,7 +250,7 @@ const Chat = () => {
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      socketRef.current.disconnect(); // Disconnect the socket when logging out 
+      socketRef.current.disconnect(); // Disconnect the socket when logging out
       console.log("Socket Disconnected: ", socketRef.current.id);
       navigate("/");
     } catch (error) {
@@ -380,11 +421,11 @@ const Chat = () => {
         {/* Messages */}
         <div className="flex-1 p-4 overflow-y-auto bg-gradient-to-br from-indigo-900 to-purple-900 bg-opacity-50">
           <div className="space-y-4">
-            {chats.map((chat) => (
+            {userSessionMessages.map((chat) => (
               <div
-                key={chat.id}
+                key={chat._id}
                 className={`flex ${
-                  chat.sender === activeChat ? "justify-start" : "justify-end"
+                  ( chat.sender.uid !== auth.currentUser.uid ) ? "justify-start" : "justify-end"
                 }`}
               >
                 <div
@@ -394,7 +435,7 @@ const Chat = () => {
                       : "bg-purple-600 rounded-tr-none"
                   }`}
                 >
-                  <p className="break-words">{chat.text}</p>
+                  <p className="break-words">{chat.content}</p>
                   <p className="text-right text-xs mt-1 text-indigo-300">
                     6.00 PM
                   </p>

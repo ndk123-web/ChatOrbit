@@ -8,6 +8,7 @@ const { nanoid } = require("nanoid");
 const { default: axios } = require("axios");
 const { User } = require("lucide-react");
 const { send } = require("vite");
+const { SocketAddress } = require("net");
 
 const app = express();
 const httpServer = http.createServer(app);
@@ -168,6 +169,26 @@ socket.on("connection", (clientSocket) => {
       }
     } catch (err) {
       console.log(`Error while sending message: ${err.message}`);
+    }
+  });
+
+  clientSocket.on("setCurrentSession", async ({ sender, receiver }) => {
+    const senderExist = await Users.findOne({ uid: sender });
+    const receiverExist = await Users.findOne({ uid: receiver });
+    if (senderExist && receiverExist) {
+      const messages = await Messages.find({
+        sender: senderExist._id,
+        receiver: receiverExist._id,
+      })
+        .populate("sender")
+        .populate("receiver");
+      console.log(`Message between ${sender} and ${receiver} is: `, messages);
+      // Send to both users individually
+      [senderExist.socketId, receiverExist.socketId].forEach((id) => {
+        socket.to(id).emit("currentSessionMessages", { messages });
+      });
+    } else {
+      console.log("Either Sender or Receiver Not Found in DB");
     }
   });
 
