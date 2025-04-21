@@ -119,15 +119,6 @@ const Chat = () => {
     },
   ];
 
-  // to check messages are came or not
-  useEffect(() => {
-    if (userSessionMessages.length > 0) {
-      console.log("Actual Messages: ", userSessionMessages);
-    } else {
-      console.log("Till Now No Messages Found for Current Session");
-    }
-  }, [userSessionMessages]);
-
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
       if (!user) {
@@ -165,8 +156,15 @@ const Chat = () => {
       });
 
       // this is important for receiveing messages from sender
-      socketRef.current.on("receiverMessage", (message) => {
-        console.log("Message: ", message);
+      socketRef.current.on("receiverMessage", ({ message }) => {
+        console.log("Message Received: ", message);
+
+        const set = () => {
+          setUserSessionMessages((prevMessages) => {
+            return [...prevMessages, message];
+          });
+        };
+        set();
       });
 
       // when user disconnect then this callback will be executed
@@ -224,6 +222,15 @@ const Chat = () => {
       socketRef.current.off("currentSessionMessages", handleMessages);
     };
   }, [activeUser]);
+
+  // to check messages are came or not
+  useEffect(() => {
+    if (userSessionMessages.length > 0) {
+      console.log("Actual Messages: ", userSessionMessages);
+    } else {
+      console.log("Till Now No Messages Found for Current Session");
+    }
+  }, [userSessionMessages]);
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -385,9 +392,7 @@ const Chat = () => {
               />
               <div
                 className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-indigo-900 ${
-                  activeUser?.socketId !== ""
-                    ? "bg-green-500"
-                    : "bg-gray-400"
+                  activeUser?.socketId !== "" ? "bg-green-500" : "bg-gray-400"
                 }`}
               ></div>
             </div>
@@ -425,11 +430,10 @@ const Chat = () => {
               <div
                 key={chat._id}
                 className={`flex ${
-
-                  // logic to check sender and receiver 
-                  // if sender is activaChat means sender is activeUser in left side 
-                  // if sender is not activeChat means he is the current User 
-                  (  chat.sender === activeChat ) ? "justify-start" : "justify-end"
+                  // logic to check sender and receiver
+                  // if sender is activaChat means sender is activeUser in left side
+                  // if sender is not activeChat means he is the current User
+                  chat.sender === activeChat ? "justify-start" : "justify-end"
                 }`}
               >
                 <div

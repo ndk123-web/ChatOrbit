@@ -140,9 +140,10 @@ socket.on("connection", (clientSocket) => {
       if (receiverExist.socketId !== "") {
         console.log(`Receiver ${receiver} exists and Online`);
 
-        // Emit a message to the receiver's socket
+        // Emit a message to the receiver's socket as well as the sender's socket for immediate feedback
         socket
           .to(receiverExist.socketId)
+          .to(senderExist.socketId)
           .emit("receiverMessage", { message: message });
 
         // Save the message in the database
