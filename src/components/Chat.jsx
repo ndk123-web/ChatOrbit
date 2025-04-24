@@ -30,94 +30,6 @@ const Chat = () => {
   const SOCKET_URL = "http://localhost:3000";
   const socketRef = useRef(null); // declare socket reference
 
-  // Sample user data
-  const users = [
-    {
-      id: 1,
-      name: "Sarah Johnson",
-      status: "online",
-      avatar: "/api/placeholder/40/40",
-      lastMessage: "Hey, how are you doing?",
-      time: "12:30 PM",
-      unread: 2,
-    },
-    {
-      id: 2,
-      name: "Michael Chen",
-      status: "offline",
-      avatar: "/api/placeholder/40/40",
-      lastMessage: "Can you send me that file?",
-      time: "Yesterday",
-      unread: 0,
-    },
-    {
-      id: 3,
-      name: "Emma Wilson",
-      status: "online",
-      avatar: "/api/placeholder/40/40",
-      lastMessage: "Let's meet tomorrow!",
-      time: "10:45 AM",
-      unread: 3,
-    },
-    {
-      id: 4,
-      name: "David Brooks",
-      status: "online",
-      avatar: "/api/placeholder/40/40",
-      lastMessage: "Thanks for your help!",
-      time: "Yesterday",
-      unread: 0,
-    },
-    {
-      id: 5,
-      name: "Julie Martinez",
-      status: "offline",
-      avatar: "/api/placeholder/40/40",
-      lastMessage: "Can we discuss the project?",
-      time: "Monday",
-      unread: 0,
-    },
-  ];
-
-  // Sample messages for the current chat
-  const chats = [
-    {
-      id: 1,
-      sender: 2,
-      text: "Hi there! How's your day going?",
-      time: "12:10 PM",
-    },
-    {
-      id: 2,
-      sender: 1,
-      text: "Hey! It's going well, thanks for asking. Just finishing up some work before lunch.",
-      time: "12:12 PM",
-    },
-    {
-      id: 3,
-      sender: 2,
-      text: "Nice! I was wondering if you had a chance to look at the designs I sent over yesterday?",
-      time: "12:15 PM",
-    },
-    {
-      id: 4,
-      sender: 1,
-      text: "Yes, I did! They look fantastic. I especially liked the color scheme you chose.",
-      time: "12:18 PM",
-    },
-    {
-      id: 5,
-      sender: 2,
-      text: "Thanks! I spent a lot of time on that. Do you think we're ready to present to the client tomorrow?",
-      time: "12:20 PM",
-    },
-    {
-      id: 6,
-      sender: 1,
-      text: "Absolutely. I think they'll be impressed with what we've come up with.",
-      time: "12:25 PM",
-    },
-  ];
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
@@ -161,7 +73,7 @@ const Chat = () => {
 
         const set = () => {
           setUserSessionMessages((prevMessages) => {
-            return [...prevMessages, message];
+            return [...prevMessages , message];
           });
         };
         set();

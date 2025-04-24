@@ -141,18 +141,18 @@ socket.on("connection", (clientSocket) => {
         console.log(`Receiver ${receiver} exists and Online`);
 
         // Emit a message to the receiver's socket as well as the sender's socket for immediate feedback
-        socket
-          .to(receiverExist.socketId)
-          .to(senderExist.socketId)
-          .emit("receiverMessage", { message: message });
-
-        // Save the message in the database
         const newMessage = new Messages({
           sender: senderExist._id,
           receiver: receiverExist._id,
           content: message,
         });
         await newMessage.save();
+
+        socket
+          .to(receiverExist.socketId)
+          .to(senderExist.socketId)
+          .emit("receiverMessage", { message: newMessage });
+        // Save the message in the database
         console.log(
           `Message saved in DB for Receiver ${receiver} with message ${message}`
         );
