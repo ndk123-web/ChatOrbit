@@ -2,7 +2,7 @@
 
 A feature-rich real-time chat application built with React, Socket.IO, Node.js, and Firebase authentication.
 
-![Chat Application Screenshot](https://github.com/USERNAME/REPO_NAME/blob/main/public/DemoDesign.png?raw=true)
+![Chat Application Screenshot](https://github.com/ndk123-web/ChatOrbit/blob/main/public/DemoDesign.png)
 
 ## 📋 Table of Contents
 
@@ -210,4 +210,3 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 3. Commit your changes (`git commit -m 'Add some amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
-
