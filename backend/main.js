@@ -9,6 +9,9 @@ const { default: axios } = require("axios");
 const { User } = require("lucide-react");
 const { send } = require("vite");
 const { SocketAddress } = require("net");
+const { useTransition } = require("react");
+
+const globalOnlineUsers = [];
 
 const app = express();
 const httpServer = http.createServer(app);
@@ -137,7 +140,7 @@ socket.on("connection", (clientSocket) => {
       );
 
       // If the receiver is online, emit a message to the receiver's socket
-      if (receiverExist.socketId !== "") {
+      if (receiverExist && senderExist) {
         console.log(`Receiver ${receiver} exists and Online`);
 
         // Emit a message to the receiver's socket as well as the sender's socket for immediate feedback
@@ -148,6 +151,7 @@ socket.on("connection", (clientSocket) => {
         });
         await newMessage.save();
 
+        // main part to render the message immediately on both sender and receiver
         socket
           .to(receiverExist.socketId)
           .to(senderExist.socketId)
@@ -156,17 +160,6 @@ socket.on("connection", (clientSocket) => {
         console.log(
           `Message saved in DB for Receiver ${receiver} with message ${message}`
         );
-      } else {
-        console.log(`Receiver ${receiver} exists but Offline`);
-
-        // Save the message as an offline message in the database
-        const newOfflineMessage = new offlineMessages({
-          sender: senderExist._id,
-          receiver: receiverExist._id,
-          content: message,
-        });
-        await newOfflineMessage.save();
-        console.log(`Offline message saved for ${receiver}`);
       }
     } catch (err) {
       console.log(`Error while sending message: ${err.message}`);
@@ -197,6 +190,15 @@ socket.on("connection", (clientSocket) => {
     } else {
       console.log("Either Sender or Receiver Not Found in DB");
     }
+  });
+
+  clientSocket.on("searchOnlineUsers", async () => {
+    const allUsers = await Users.find({});
+    const onlineUsers = allUsers.filter((user) => {
+      return user.socketId !== "";
+    });
+    console.log("Online Users: ", onlineUsers);
+    socket.emit("getOnlineUsers" , { onlineUsers }) 
   });
 
   // When the client disconnects, log the event

@@ -27,138 +27,172 @@ const Chat = () => {
   const { userDetails, setUserDetails } = useContext(myContext);
   const [AllUsers, setAllUsers] = useState([]);
   const [userSessionMessages, setUserSessionMessages] = useState([]);
+  const [onlineUsers, setOnlineUsers] = useState([]);
   const SOCKET_URL = "http://localhost:3000";
   const socketRef = useRef(null); // declare socket reference
 
+  // Get active user from AllUsers
+  const activeUser = AllUsers.find((user) => user._id === activeChat);
 
+  // Initial setup - auth state and socket connection
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (user) => {
+    const unsub = onAuthStateChanged(auth, async (user) => {
       if (!user) {
         navigate("/");
         return;
       }
-      // console.log("Current User: ", user);
-      setUserDetails({
-        userName: user.displayName || user.email,
-        photoUrl: user.photoURL || "user.png",
-      });
 
-      // it generates a new socket instance
-      socketRef.current = io(SOCKET_URL);
-
-      // when socket handshake is done with server then this callback will be executed
-      socketRef.current.on("connect", async () => {
-        console.log("Socket Connected: ", socketRef.current.id);
-
-        try {
-          socketRef.current.emit("setSocketId", {
-            uid: user.uid,
-            socketId: socketRef.current.id,
-          });
-
-          // const serverResponse = await axios.put(
-          //   "http://localhost:3000/setSocketId",
-          //   { socketId: socketRef.current.id, uid: user.uid },
-          //   { headers: { "Content-Type": "application/json" } }
-          // );
-          // console.log("Server Response:", serverResponse.data);
-        } catch (error) {
-          console.error("Error Updating Socket ID:", error);
-        }
-      });
-
-      // this is important for receiveing messages from sender
-      socketRef.current.on("receiverMessage", ({ message }) => {
-        console.log("Message Received: ", message);
-
-        const set = () => {
-          setUserSessionMessages((prevMessages) => {
-            return [...prevMessages , message];
-          });
-        };
-        set();
-      });
-
-      // when user disconnect then this callback will be executed
-    });
-
-    return () => {
-      // Cleanup function to unsubscribe from the auth state listener
-      if (socketRef.current) {
-        socketRef.current.off("receiverMessage"); // Remove the message listener
-      }
-      unsub();
-    };
-  }, []);
-
-  // Fetch all users from the server which is Left Side Where all users are listed
-  useEffect(() => {
-    const fetchUsers = async () => {
       try {
         const response = await axios.get("http://localhost:3000/getAllUsers", {
           headers: { "Content-Type": "application/json" },
         });
-        // console.log(response); // debug
-        setAllUsers(response.data);
+        const finalData = response.data.filter((u) => u.uid !== user.uid);
+        setAllUsers(finalData);
+
+        setUserDetails({
+          userName: user.displayName || user.email,
+          photoUrl: user.photoURL || "user.png",
+        });
+
+        // Create socket connection - only once
+        if (!socketRef.current) {
+          socketRef.current = io(SOCKET_URL);
+        }
       } catch (err) {
-        alert(err.message);
+        console.error("Error fetching users:", err);
       }
+    });
+
+    return () => {
+      unsub();
     };
-    fetchUsers();
   }, []);
 
-  const activeUser = AllUsers.find((user) => user._id === activeChat);
-
-  // to fetch message of current user and activeUser ( sender and receiver )
+  // Setup socket event listeners - only when socket is created
   useEffect(() => {
-    if (!socketRef.current) return;
+    if (!socketRef.current || !auth.currentUser) return;
 
+    // Socket connect handler
+    const handleConnect = async () => {
+      console.log("Socket Connected: ", socketRef.current.id);
+
+      try {
+        socketRef.current.emit("setSocketId", {
+          uid: auth.currentUser.uid,
+          socketId: socketRef.current.id,
+        });
+
+        socketRef.current.emit("searchOnlineUsers", "SignalToGetOnlineUsers");
+      } catch (error) {
+        console.error("Error Updating Socket ID:", error);
+      }
+    };
+
+    // Message receiver handler
+    const handleReceiveMessage = ({ message }) => {
+      console.log("Message Received: ", message);
+      setUserSessionMessages((prevMessages) => [...prevMessages, message]);
+    };
+
+    // Online users handler
+    const handleOnlineUsers = ({ onlineUsers }) => {
+      console.log("Online Users: ", onlineUsers);
+      setOnlineUsers(onlineUsers);
+    };
+
+    // Register event handlers
+    socketRef.current.on("connect", handleConnect);
+    socketRef.current.on("receiverMessage", handleReceiveMessage);
+    socketRef.current.on("getOnlineUsers", handleOnlineUsers);
+
+    // Initial search for online users
+    if (socketRef.current.connected) {
+      socketRef.current.emit("searchOnlineUsers", "SignalToGetOnlineUsers");
+    }
+
+    // Cleanup function
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.off("connect", handleConnect);
+        socketRef.current.off("receiverMessage", handleReceiveMessage);
+        socketRef.current.off("getOnlineUsers", handleOnlineUsers);
+      }
+    };
+  }, [socketRef.current]);
+
+  // Handle active chat change - fetch messages for the current session
+  // Handle active chat change - fetch messages for the current session
+  useEffect(() => {
+    if (!socketRef.current || !auth.currentUser || !activeUser) return;
+
+    // Clear any previous listeners first
+    socketRef.current.off("currentSessionMessages");
+
+    // Set up session with server
     socketRef.current.emit("setCurrentSession", {
       sender: auth.currentUser.uid,
       receiver: activeUser.uid,
     });
 
+    // Define handler function
     const handleMessages = ({ messages }) => {
       if (messages) {
         console.log("Current Session Messages: ", messages);
-        setUserSessionMessages(messages);
+        // Only update if the messages are different
+        setUserSessionMessages((prevMessages) => {
+          // Check if the new messages array is different from current
+          if (
+            prevMessages.length !== messages.length ||
+            JSON.stringify(prevMessages) !== JSON.stringify(messages)
+          ) {
+            return messages;
+          }
+          return prevMessages;
+        });
       } else {
         console.log("No Messages Found for Current Session");
       }
     };
 
+    // Set up the listener
     socketRef.current.on("currentSessionMessages", handleMessages);
 
-    // Cleanup function to remove the event listener when the component unmounts or when activeUser changes
-    return () => {
-      socketRef.current.off("currentSessionMessages", handleMessages);
+    // Fetch users information without setting up more event listeners
+    const fetchUsersAgain = async () => {
+      try {
+        const response = await axios.get("http://localhost:3000/getAllUsers", {
+          headers: { "Content-Type": "application/json" },
+        });
+        const finalUsers = response.data.filter(
+          (user) => user.uid !== auth.currentUser.uid
+        );
+        setAllUsers(finalUsers);
+      } catch (err) {
+        console.error("Error fetching users:", err);
+      }
     };
-  }, [activeUser]);
+    fetchUsersAgain();
 
-  // to check messages are came or not
-  useEffect(() => {
-    if (userSessionMessages.length > 0) {
-      console.log("Actual Messages: ", userSessionMessages);
-    } else {
-      console.log("Till Now No Messages Found for Current Session");
-    }
-  }, [userSessionMessages]);
+    // Clean up on unmount or when activeChat changes
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.off("currentSessionMessages", handleMessages);
+      }
+    };
+  }, [activeChat]);
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (message.trim() === "") {
+    if (message.trim() === "" || !activeUser || !socketRef.current) {
       return;
     }
-    // setMessage(e.target.value);
 
-    // Actual Logic For Sending Message to Receiver activeUser is receiver
     socketRef.current.emit("sendMessage", {
       sender: auth.currentUser.uid,
       receiver: activeUser.uid,
       message: message,
     });
 
-    // Logic to send message would go here
     setMessage("");
   };
 
@@ -168,9 +202,11 @@ const Chat = () => {
 
   const handleLogout = async () => {
     try {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        console.log("Socket Disconnected");
+      }
       await signOut(auth);
-      socketRef.current.disconnect(); // Disconnect the socket when logging out
-      console.log("Socket Disconnected: ", socketRef.current.id);
       navigate("/");
     } catch (error) {
       console.error("Error signing out:", error);
@@ -294,11 +330,7 @@ const Chat = () => {
             </button>
             <div className="relative">
               <img
-                src={
-                  console.log("ActiveUser: ", activeUser) ||
-                  activeUser?.photoUrl ||
-                  "user.png"
-                }
+                src={activeUser?.photoUrl || "user.png"}
                 alt={activeUser?.userName}
                 className="w-10 h-10 rounded-full object-cover"
               />
@@ -342,9 +374,6 @@ const Chat = () => {
               <div
                 key={chat._id}
                 className={`flex ${
-                  // logic to check sender and receiver
-                  // if sender is activaChat means sender is activeUser in left side
-                  // if sender is not activeChat means he is the current User
                   chat.sender === activeChat ? "justify-start" : "justify-end"
                 }`}
               >
