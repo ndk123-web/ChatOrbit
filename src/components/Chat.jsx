@@ -43,11 +43,11 @@ const Chat = () => {
       }
 
       try {
-        const response = await axios.get("http://localhost:3000/getAllUsers", {
+        const response = await axios.get("http://localhost:3000/getAllUsers", { // fetch all users 
           headers: { "Content-Type": "application/json" },
         });
-        const finalData = response.data.filter((u) => u.uid !== user.uid);
-        setAllUsers(finalData);
+        const finalData = response.data.filter((u) => u.uid !== user.uid); // Exclude current user from AllUsers
+        setAllUsers(finalData);                                            // set state with filtered users 
 
         setUserDetails({
           userName: user.displayName || user.email,
