@@ -139,10 +139,13 @@ ChatOrbit/
 │   │   ├── routes/route.js
 │   │   └── ...
 │   └── package.json
+│   └── dockerfile
+│   └── docker-compose.yml
 │
-├── server/
+├── backend/
 │   ├── main.js
 │   └── package.json
+│   └── dockerfile
 │
 ├── docker-compose.yml
 └── README.md
