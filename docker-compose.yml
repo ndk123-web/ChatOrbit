@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  chatfrontend:
+    build: .
+    container_name: chatfrontend
+    ports:
+      - "5173:5173"
+    networks:
+      - myNetwork
+    # depends_on hata diya, frontend ko backend par runtime par dependency nahi hai.
+
+  chatbackend:
+    build: ./backend
+    container_name: chatbackend
+    ports:
+      - "3000:3000"
+    networks:
+      - myNetwork
+    depends_on:
+      - chatmongodb  # Sirf database pe dependent hai backend.
+
+  chatmongodb:
+    image: mongo:latest
+    container_name: chatmongodb
+    ports:
+      - "27017:27017"
+    networks:
+      - myNetwork
+    volumes:
+      - mongodb_data:/data/db
+
+volumes:
+  mongodb_data:
+    driver: local
+
+networks:
+  myNetwork:
+    driver: bridge

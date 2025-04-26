@@ -1,16 +1,11 @@
 // Import necessary dependencies
-const express = require("express"); // Express web framework
-const http = require("http"); // HTTP server
-const mongoose = require("mongoose"); // MongoDB ODM
-const { Server } = require("socket.io"); // Socket.IO for real-time communication
-const cors = require("cors"); // Cross-Origin Resource Sharing middleware
-const { nanoid } = require("nanoid"); // Unique ID generator
-const { default: axios } = require("axios"); // HTTP client for external API calls
-// Unused imports that could be removed
-const { User } = require("lucide-react"); // (Unused) React icon component
-const { send } = require("vite"); // (Unused) Vite function
-const { SocketAddress } = require("net"); // (Unused) Node.js net module
-const { useTransition } = require("react"); // (Unused) React hook
+import express from "express"; // Express web framework
+import http from "http"; // HTTP server
+import mongoose from "mongoose"; // MongoDB ODM
+import { Server } from "socket.io"; // Socket.IO for real-time communication
+import cors from "cors"; // Cross-Origin Resource Sharing middleware
+import { nanoid } from "nanoid"; // Unique ID generator
+import axios from "axios"; // HTTP client for external API calls
 
 // Array to track online users globally
 const globalOnlineUsers = [];
@@ -33,7 +28,7 @@ app.use(cors()); // Enable CORS for all routes
 
 // Connect to MongoDB
 mongoose
-  .connect("mongodb://localhost:27017/ChatOrbit")
+  .connect("mongodb://chatmongodb:27017/ChatOrbit")
   .then(() => console.log("MongoDB Connected"))
   .catch((err) => console.log("MongoDB Error: ", err.message));
 
