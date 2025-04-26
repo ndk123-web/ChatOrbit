@@ -210,3 +210,132 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 3. Commit your changes (`git commit -m 'Add some amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
+
+# ChatOrbit - Real-Time Chat App
+
+## Tech Stack
+- Frontend: React.js (Vite)
+- Backend: Node.js + Express.js + Socket.IO
+- Database: MongoDB (Docker Container)
+- Authentication: Firebase
+- Docker & Docker Compose
+
+---
+
+## Prerequisites
+- WSL (Ubuntu recommended)
+- Docker installed (`docker --version`)
+- Docker Compose installed (`docker-compose --version`)
+
+---
+
+## Project Structure
+```
+ChatOrbit/
+|-- client/ (React frontend)
+|-- server/ (Node.js backend)
+|-- docker-compose.yml
+|-- README.md
+```
+
+---
+
+## Setup Instructions
+
+### 1. Clone the Repository
+```bash
+git clone <your-repo-url>
+cd ChatOrbit
+```
+
+### 2. Environment Setup
+
+#### 2.1 Create .env for React (Frontend)
+Inside `client/` folder:
+```bash
+touch .env
+```
+
+Add the following:
+```env
+VITE_FIREBASE_API_KEY=your_firebase_api_key
+VITE_FIREBASE_AUTH_DOMAIN=your_firebase_auth_domain
+VITE_FIREBASE_PROJECT_ID=your_firebase_project_id
+VITE_FIREBASE_STORAGE_BUCKET=your_firebase_storage_bucket
+VITE_FIREBASE_MESSAGING_SENDER_ID=your_firebase_sender_id
+VITE_FIREBASE_APP_ID=your_firebase_app_id
+```
+
+
+### 3. Run Docker Compose
+```bash
+docker-compose up --build
+```
+
+It will:
+- Build React app
+- Build Node.js backend
+- Start MongoDB container
+
+
+---
+
+## Access the App
+- Frontend: [http://localhost:5173](http://localhost:5173)
+- Backend API: [http://localhost:3000](http://localhost:3000)
+
+
+---
+
+## Common Problems (Especially in WSL)
+
+| Problem | Solution |
+| :------ | :------- |
+| Backend crashes | Go inside container, run `npm install`, restart container |
+| node_modules missing | Adjust volume settings or rebuild with `--build` |
+| MongoDB connection issues | Ensure `mongodb` service healthy in Docker |
+| Ports busy | Kill old containers `docker ps` + `docker kill <container-id>` |
+
+
+---
+
+## Docker Commands Help
+```bash
+docker-compose down  # stop everything
+docker-compose up --build  # build and start fresh
+docker-compose logs -f  # see logs live
+docker exec -it <container-id> bash  # enter inside container
+```
+
+
+---
+
+## Services Overview
+
+| Service  | Role  | Port |
+| :------ | :--- | :--- |
+| frontend | React frontend | 5173 |
+| backend  | Node.js server + Socket.IO | 3000 |
+| mongodb  | Database | 27017 |
+
+
+---
+
+# Notes:
+- Always check `.env` files before starting.
+- Frontend talks to backend via `http://localhost:3000`.
+- Socket.IO real-time connection also via backend server.
+- MongoDB runs in Docker internal network.
+
+
+---
+
+# Final Summary
+- Ek hi command: `docker-compose up --build`
+- localhost:5173 open karo browser me.
+- Chat fully real-time chalega.
+
+---
+
+# Made with ❤️ - ChatOrbit Team
+
