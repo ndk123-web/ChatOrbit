@@ -1,4 +1,4 @@
-# ChatOrbit ( Real-time Chat Application )
+# ChatOrbit - Real-time Chat Application
 
 A feature-rich real-time chat application built with React, Socket.IO, Node.js, and Firebase authentication.
 
@@ -12,12 +12,17 @@ A feature-rich real-time chat application built with React, Socket.IO, Node.js, 
 - [Socket.IO Implementation](#socketio-implementation)
 - [Project Structure](#project-structure)
 - [Installation](#installation)
+  - [Prerequisites](#prerequisites)
+  - [Environment Setup](#environment-setup)
+  - [Setup with Docker](#setup-with-docker)
+  - [Manual Setup](#manual-setup)
 - [Running the Application](#running-the-application)
+- [Common Issues & Troubleshooting](#common-issues--troubleshooting)
 - [Contributing](#contributing)
 
 ## 🔭 Overview
 
-This project is a real-time chat application that demonstrates the power of Socket.IO for bidirectional communication between clients and servers. Users can authenticate with Firebase, message other users in real-time, and see online/offline status indicators.
+ChatOrbit is a real-time chat application that demonstrates the power of Socket.IO for bidirectional communication between clients and servers. Users can authenticate with Firebase, message other users in real-time, and see online/offline status indicators.
 
 The primary focus of this application is to showcase how Socket.IO integrates with a modern web development stack to create a seamless real-time communication experience.
 
@@ -58,6 +63,10 @@ Currently, this project uses a **monolithic backend** for simplicity and rapid d
 ### Authentication
 
 - **Firebase Authentication**: User authentication service
+
+### Deployment
+
+- **Docker & Docker Compose**: Containerization and orchestration
 
 ## 🔌 Socket.IO Implementation
 
@@ -113,15 +122,16 @@ The application tracks user online status by:
 ## 📁 Project Structure
 
 ```
+ChatOrbit/
 ├── client/
 │   ├── public/
 │   ├── src/
 │   │   ├── components/
 │   │   │   ├── Chat.jsx       # Main chat component
-│   │   │   └── NavBar.jsx
-│   │   │   └── FeatureSection.jsx
-│   │   │   └── HeroSection.jsx
-│   │   │   └── Login.jsx
+│   │   │   ├── NavBar.jsx
+│   │   │   ├── FeatureSection.jsx
+│   │   │   ├── HeroSection.jsx
+│   │   │   ├── Login.jsx
 │   │   │   └── SignUp.jsx
 │   │   │
 │   │   ├── firebaseConfig/config.js
@@ -130,14 +140,15 @@ The application tracks user online status by:
 │   │   └── ...
 │   └── package.json
 │
-├── backend/
+├── server/
 │   ├── main.js
 │   └── package.json
 │
+├── docker-compose.yml
 └── README.md
 ```
 
-Unlike a typical production application with separated controllers, models, and routes, this project uses a monolithic structure for the backend with all functionality contained in a single `index.js` file.
+Unlike a typical production application with separated controllers, models, and routes, this project uses a monolithic structure for the backend with all functionality contained in a single file.
 
 ## 🚀 Installation
 
@@ -146,21 +157,14 @@ Unlike a typical production application with separated controllers, models, and 
 - Node.js (v14 or newer)
 - MongoDB
 - Firebase account
+- For Docker setup: Docker and Docker Compose
+- For WSL users: Ubuntu recommended
 
-### Setting up the Frontend
+### Environment Setup
 
-```bash
-# Navigate to client directory
-cd client
+#### Frontend Environment (.env)
 
-# Install dependencies
-npm install
-
-# Create .env file with Firebase config
-touch .env
-```
-
-Configure `.env` with your Firebase credentials:
+Create a `.env` file in the `client/` directory:
 
 ```
 VITE_FIREBASE_API_KEY=your_api_key
@@ -171,7 +175,34 @@ VITE_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
 VITE_FIREBASE_APP_ID=your_app_id
 ```
 
-### Setting up the Backend
+### Setup with Docker
+
+The easiest way to get started is using Docker Compose:
+
+```bash
+# Clone the repository
+git clone <repository-url>
+cd ChatOrbit
+
+# Set up environment variables (as described above)
+
+# Build and start the containers
+docker-compose up --build
+```
+
+### Manual Setup
+
+#### Frontend Setup
+
+```bash
+# Navigate to client directory
+cd client
+
+# Install dependencies
+npm install
+```
+
+#### Backend Setup
 
 ```bash
 # Navigate to server directory
@@ -179,27 +210,54 @@ cd server
 
 # Install dependencies
 npm install
-
-# No .env file needed as configuration is hardcoded in index.js
 ```
 
 ## 🏃‍♂️ Running the Application
 
-### Start the Backend Server
+### With Docker
+
+```bash
+docker-compose up
+```
+
+### Without Docker
+
+#### Start the Backend Server
 
 ```bash
 cd server
-node index.js
+node main.js
 ```
 
-### Start the Frontend Development Server
+#### Start the Frontend Development Server
 
 ```bash
 cd client
-npm run dev  # Assuming Vite is used (port 5173)
+npm run dev  # Vite development server (port 5173)
 ```
 
-The application should be available at `http://localhost:5173`.
+### Access the Application
+
+- Frontend: [http://localhost:5173](http://localhost:5173)
+- Backend API: [http://localhost:3000](http://localhost:3000)
+
+## Common Issues & Troubleshooting
+
+| Problem                   | Solution                                                            |
+| :------------------------ | :------------------------------------------------------------------ |
+| Backend crashes           | Go inside container, run `npm install`, restart container           |
+| node_modules missing      | Adjust volume settings or rebuild with `--build`                    |
+| MongoDB connection issues | Ensure `mongodb` service is healthy in Docker                       |
+| Ports busy                | Kill old containers with `docker ps` + `docker kill <container-id>` |
+
+### Useful Docker Commands
+
+```bash
+docker-compose down  # stop everything
+docker-compose up --build  # build and start fresh
+docker-compose logs -f  # see logs live
+docker exec -it <container-id> bash  # enter inside container
+```
 
 ## 👥 Contributing
 
@@ -211,131 +269,6 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-# ChatOrbit - Real-Time Chat App
-
-## Tech Stack
-- Frontend: React.js (Vite)
-- Backend: Node.js + Express.js + Socket.IO
-- Database: MongoDB (Docker Container)
-- Authentication: Firebase
-- Docker & Docker Compose
-
 ---
 
-## Prerequisites
-- WSL (Ubuntu recommended)
-- Docker installed (`docker --version`)
-- Docker Compose installed (`docker-compose --version`)
-
----
-
-## Project Structure
-```
-ChatOrbit/
-|-- client/ (React frontend)
-|-- server/ (Node.js backend)
-|-- docker-compose.yml
-|-- README.md
-```
-
----
-
-## Setup Instructions
-
-### 1. Clone the Repository
-```bash
-git clone <your-repo-url>
-cd ChatOrbit
-```
-
-### 2. Environment Setup
-
-#### 2.1 Create .env for React (Frontend)
-Inside `client/` folder:
-```bash
-touch .env
-```
-
-Add the following:
-```env
-VITE_FIREBASE_API_KEY=your_firebase_api_key
-VITE_FIREBASE_AUTH_DOMAIN=your_firebase_auth_domain
-VITE_FIREBASE_PROJECT_ID=your_firebase_project_id
-VITE_FIREBASE_STORAGE_BUCKET=your_firebase_storage_bucket
-VITE_FIREBASE_MESSAGING_SENDER_ID=your_firebase_sender_id
-VITE_FIREBASE_APP_ID=your_firebase_app_id
-```
-
-
-### 3. Run Docker Compose
-```bash
-docker-compose up --build
-```
-
-It will:
-- Build React app
-- Build Node.js backend
-- Start MongoDB container
-
-
----
-
-## Access the App
-- Frontend: [http://localhost:5173](http://localhost:5173)
-- Backend API: [http://localhost:3000](http://localhost:3000)
-
-
----
-
-## Common Problems (Especially in WSL)
-
-| Problem | Solution |
-| :------ | :------- |
-| Backend crashes | Go inside container, run `npm install`, restart container |
-| node_modules missing | Adjust volume settings or rebuild with `--build` |
-| MongoDB connection issues | Ensure `mongodb` service healthy in Docker |
-| Ports busy | Kill old containers `docker ps` + `docker kill <container-id>` |
-
-
----
-
-## Docker Commands Help
-```bash
-docker-compose down  # stop everything
-docker-compose up --build  # build and start fresh
-docker-compose logs -f  # see logs live
-docker exec -it <container-id> bash  # enter inside container
-```
-
-
----
-
-## Services Overview
-
-| Service  | Role  | Port |
-| :------ | :--- | :--- |
-| frontend | React frontend | 5173 |
-| backend  | Node.js server + Socket.IO | 3000 |
-| mongodb  | Database | 27017 |
-
-
----
-
-# Notes:
-- Always check `.env` files before starting.
-- Frontend talks to backend via `http://localhost:3000`.
-- Socket.IO real-time connection also via backend server.
-- MongoDB runs in Docker internal network.
-
-
----
-
-# Final Summary
-- Ek hi command: `docker-compose up --build`
-- localhost:5173 open karo browser me.
-- Chat fully real-time chalega.
-
----
-
-# Made with ❤️ - ChatOrbit Team
-
+Made with ❤️ by the Me
