@@ -9,7 +9,7 @@ import {
   signOut,
 } from "firebase/auth";
 import { app } from "../firebaseConfig/config";
-import "../app.css";
+import '../App.css'
 import { Link, useNavigate } from "react-router-dom"; // Assuming you're using react-router
 import axios from "axios";
 import { myContext } from "../sessionProvider/myContext";

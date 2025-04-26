@@ -2,7 +2,7 @@ import { createBrowserRouter, RouterProvider } from "react-router";
 
 import App from "../App";
 import Login from "../components/login";
-import Signup from "../components/signup";
+import Signup from "../components/Signup";
 import Chat from "../components/Chat";
 
 const Router = createBrowserRouter([
