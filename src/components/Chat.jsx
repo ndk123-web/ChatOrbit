@@ -30,7 +30,7 @@ const Chat = () => {
   const [AllUsers, setAllUsers] = useState([]); // List of all available chat users
   const [userSessionMessages, setUserSessionMessages] = useState([]); // Messages for current chat session
   const [onlineUsers, setOnlineUsers] = useState([]); // Tracks which users are currently online
-  const SOCKET_URL = "http://localhost:3000"; // Socket.io server URL
+  const SOCKET_URL = "http://192.168.0.101:3000"; // Socket.io server URL
   const socketRef = useRef(null); // Persistent reference to socket connection
 
   // Find the currently active user object from AllUsers array
@@ -50,7 +50,7 @@ const Chat = () => {
 
       try {
         // Fetch all users from the backend
-        const response = await axios.get("http://localhost:3000/getAllUsers", {
+        const response = await axios.get("http://192.168.0.101:3000/getAllUsers", {
           headers: { "Content-Type": "application/json" },
         });
         // Filter out the current user from the users list
@@ -177,7 +177,7 @@ const Chat = () => {
     // Refresh users list to get latest data
     const fetchUsersAgain = async () => {
       try {
-        const response = await axios.get("http://localhost:3000/getAllUsers", {
+        const response = await axios.get("http://192.168.0.101:3000/getAllUsers", {
           headers: { "Content-Type": "application/json" },
         });
         const finalUsers = response.data.filter(
